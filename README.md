@@ -1,6 +1,5 @@
-# AEDs II - Oficinas e Atividade 3 - Sistemas de software com Estruturas de dados de busca 
-Oficinas e atividade pontuada realizada em AEDs II, tendo em vista estruturas de dados de busca em sistemas de software.
+# Código do Projeto
 
-## Aluno 
+Mantenha neste diretório todo o código fonte do projeto. 
 
-* Nome completo do aluno 1
+Se necessário, descreva neste arquivo aspectos relevantes da estrutura de diretórios criada para organização do código.
