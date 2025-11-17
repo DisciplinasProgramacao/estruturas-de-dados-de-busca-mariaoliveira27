@@ -2,7 +2,7 @@ import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
-public class ABB<K, V> implements IMapeamento<K, V>{
+public class ABB<K extends Comparable<K>, V> implements IMapeamento<K, V>{
 
 	private No<K, V> raiz; // referência à raiz da árvore.
 	private Comparator<K> comparador; //comparador empregado para definir "menores" e "maiores".
@@ -64,7 +64,7 @@ public class ABB<K, V> implements IMapeamento<K, V>{
      * @param novaArvore Nova árvore. Parâmetro usado para permitir o retorno da recursividade.
      * @return A nova árvore com os itens copiados e usando a chave indicada pela função extratora.
      */
-    private <T> ABB<T, V> copiarArvore(No<?, V> raizArvore, Function<V, T> funcaoChave, ABB<T, V> novaArvore) {
+    private <T extends Comparable<T>> ABB<T, V> copiarArvore(No<?, V> raizArvore, Function<V, T> funcaoChave, ABB<T, V> novaArvore) {
     	
         if (raizArvore != null) {
     		novaArvore = copiarArvore(raizArvore.getEsquerda(), funcaoChave, novaArvore);
@@ -122,6 +122,7 @@ public class ABB<K, V> implements IMapeamento<K, V>{
     		/// Se o item procurado for maior do que o item armazenado na raiz da árvore:
             /// pesquise esse item na sub-árvore direita.
     		return pesquisar(raizArvore.getDireita(), procurado);
+
     }
     
     @Override
@@ -133,9 +134,32 @@ public class ABB<K, V> implements IMapeamento<K, V>{
      * @return o tamanho atualizado da árvore após a execução da operação de inserção.
      */
     public int inserir(K chave, V item) {
-    	
-    	// TODO
-        return tamanho;
+		if (raiz == null) {
+			raiz = new No<>(chave, item); // Cria a raiz se a árvore estiver vazia
+			tamanho++;
+			return tamanho;
+		}
+		raiz = inserirRecursivo(raiz, chave, item);
+		return tamanho;
+	}
+	
+	private No<K, V> inserirRecursivo(No<K, V> atual, K chave, V item) {
+		if (atual == null) {
+			tamanho++; // Incrementa o tamanho ao inserir um novo nó
+			return new No<>(chave, item);
+		}
+	
+		int comparacao = comparador.compare(chave, atual.getChave());
+		if (comparacao < 0) {
+			atual.setEsquerda(inserirRecursivo(atual.getEsquerda(), chave, item));
+		} else if (comparacao > 0) {
+			atual.setDireita(inserirRecursivo(atual.getDireita(), chave, item));
+		} else {
+			// Atualiza o valor se a chave já existir
+			atual.setItem(item);
+		}
+	
+		return atual;
     }
 
     @Override 
@@ -149,9 +173,16 @@ public class ABB<K, V> implements IMapeamento<K, V>{
     }
 
     public String caminhamentoEmOrdem() {
-    	
-    	// TODO
-    	return null;
+    	StringBuilder resultado = new StringBuilder();
+    caminhamentoEmOrdemRecursivo(raiz, resultado);
+    return resultado.toString().trim();
+	}
+	private void caminhamentoEmOrdemRecursivo(No<K, V> atual, StringBuilder resultado) {
+		if (atual != null) {
+			caminhamentoEmOrdemRecursivo(atual.getEsquerda(), resultado);
+			resultado.append(atual.getChave()).append(" ");
+			caminhamentoEmOrdemRecursivo(atual.getDireita(), resultado);
+		}
     }
 
     @Override
@@ -161,10 +192,71 @@ public class ABB<K, V> implements IMapeamento<K, V>{
      * @return o valor associado ao item removido.
      */
     public V remover(K chave) {
+    	if ( raiz == null){
+			return null;
+		}
+		No<K, V> pai = null;
+		No<K, V> atual = raiz;
+
+		while (atual!= null && !atual.getChave().equals(chave)) {
+			pai = atual;
+			if (chave.compareTo(atual.getChave()) < 0 ) {
+				atual = atual.getEsquerda();
+			}else{
+				atual = atual.getDireita();
+			}
+		}
+
     	
-    	// TODO
-    	return null;
+    if (atual == null) {
+        return null; // Chave não encontrada
     }
+
+    V valorRemovido = atual.getItem();
+
+    // Caso 1: Nó sem filhos
+    if (atual.getEsquerda() == null && atual.getDireita() == null) {
+        if (atual == raiz) {
+            raiz = null;
+        } else if (pai.getEsquerda() == atual) {
+            pai.setEsquerda(null);
+        } else {
+            pai.setDireita(null);
+        }
+    }
+    // Caso 2: Nó com um filho
+    else if (atual.getEsquerda() == null || atual.getDireita() == null) {
+        No<K, V> filho = (atual.getEsquerda() != null) ? atual.getEsquerda() : atual.getDireita();
+        if (atual == raiz) {
+            raiz = filho;
+        } else if (pai.getEsquerda() == atual) {
+            pai.setEsquerda(filho);
+        } else {
+            pai.setDireita(filho);
+        }
+    }
+    // Caso 3: Nó com dois filhos
+    else {
+        No<K, V> sucessor = obterSucessor(atual);
+        K chaveSucessor = sucessor.getChave();
+        V valorSucessor = sucessor.getItem();
+        remover(sucessor.getChave()); // Remove o sucessor
+        atual.setChave(chaveSucessor);
+        atual.setItem(valorSucessor);
+    }
+
+    tamanho--; // Atualiza o tamanho da árvore
+    return valorRemovido;
+}
+
+private No<K, V> obterSucessor(No<K, V> no) {
+    No<K, V> atual = no.getDireita();
+    while (atual != null && atual.getEsquerda() != null) {
+        atual = atual.getEsquerda();
+    }
+    return atual;
+}
+    
 
 	@Override
 	public int tamanho() {
